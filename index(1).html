@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voice of the Outer Worlds</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --text: #111111;
+      --sub-text: #6b7280;
+      --rule: rgba(17,17,17,1);
+      --toggle-bg: #e2e4ea;
+      --toggle-knob: #ffffff;
+      --star-opacity: 0;
+    }
+
+    [data-theme="dark"] {
+      --bg: #07080f;
+      --text: #e8e8f0;
+      --sub-text: #8b92a8;
+      --rule: rgba(232,232,240,0.18);
+      --toggle-bg: #2a2d3e;
+      --toggle-knob: #a78bfa;
+      --star-opacity: 1;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      transition: background 0.5s ease;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      overflow-x: hidden;
+      color: var(--text);
+    }
+
+    /* ── STARFIELD ── */
+    #starfield {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: var(--star-opacity);
+      transition: opacity 0.7s ease;
+    }
+
+    /* ── AMBIENT BLOBS ── */
+    .ambient {
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0;
+      transition: opacity 0.7s ease;
+    }
+    [data-theme="light"] .ambient { opacity: 0.13; }
+    .ambient-1 { width: 500px; height: 500px; background: #c084fc; top: -120px; left: -100px; }
+    .ambient-2 { width: 400px; height: 400px; background: #38bdf8; bottom: -80px; right: -80px; }
+
+    /* ══════════════════════════════════════════
+       TOGGLE BUTTON (shared)
+    ══════════════════════════════════════════ */
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+    .toggle-label {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--sub-text);
+      transition: color 0.4s;
+    }
+    .toggle {
+      position: relative;
+      width: 46px; height: 25px;
+      background: var(--toggle-bg);
+      border-radius: 99px;
+      cursor: pointer;
+      border: none;
+      transition: background 0.4s;
+    }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 19px; height: 19px;
+      border-radius: 50%;
+      background: var(--toggle-knob);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+      transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), background 0.4s;
+    }
+    [data-theme="dark"] .toggle::after { transform: translateX(21px); }
+
+    /* ══════════════════════════════════════════
+       SPLASH PAGE
+    ══════════════════════════════════════════ */
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+      transition: opacity 0.55s ease;
+    }
+
+    #splash.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #splash .toggle-wrap {
+      position: absolute;
+      top: 1.4rem;
+      right: 1.8rem;
+    }
+
+    .splash-headline {
+      font-family: 'Cinzel Decorative', serif;
+      font-weight: 900;
+      font-size: clamp(2.6rem, 7vw, 7rem);
+      line-height: 1.08;
+      text-align: center;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background:
+        radial-gradient(ellipse 80% 60% at 30% 40%, #c084fc 0%, transparent 55%),
+        radial-gradient(ellipse 60% 80% at 70% 60%, #38bdf8 0%, transparent 55%),
+        radial-gradient(ellipse 70% 50% at 50% 20%, #f472b6 0%, transparent 50%),
+        radial-gradient(ellipse 50% 70% at 80% 80%, #fb923c 0%, transparent 55%),
+        radial-gradient(ellipse 90% 90% at 50% 50%, #818cf8 0%, #0ea5e9 50%, #a78bfa 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      opacity: 0;
+      animation: fadeRise 1.8s cubic-bezier(0.22,1,0.36,1) 0.4s forwards;
+    }
+    [data-theme="light"] .splash-headline { filter: brightness(0.82) saturate(1.4); }
+    [data-theme="dark"]  .splash-headline { filter: drop-shadow(0 0 60px rgba(167,139,250,0.45)) brightness(1.15); }
+
+    .splash-sub {
+      margin-top: 1.6rem;
+      font-weight: 300;
+      font-style: italic;
+      font-size: clamp(0.95rem, 2vw, 1.3rem);
+      color: var(--sub-text);
+      letter-spacing: 0.06em;
+      text-align: center;
+      max-width: 480px;
+      line-height: 1.7;
+      opacity: 0;
+      animation: fadeRise 1.4s ease 1.4s forwards;
+      transition: color 0.5s;
+    }
+
+    .splash-divider {
+      margin-top: 2.8rem;
+      width: 120px; height: 1px;
+      background: linear-gradient(90deg, transparent, #a78bfa88, transparent);
+      opacity: 0;
+      animation: fadeRise 1s ease 1.9s forwards;
+    }
+
+    .splash-nav {
+      margin-top: 2rem;
+      display: flex;
+      gap: clamp(1.2rem, 3vw, 2.4rem);
+      flex-wrap: wrap;
+      justify-content: center;
+      opacity: 0;
+      animation: fadeRise 1.2s ease 2.1s forwards;
+    }
+    .splash-nav a {
+      font-size: clamp(0.75rem, 1.5vw, 0.9rem);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--text);
+      opacity: 0.65;
+      position: relative;
+      padding-bottom: 3px;
+      transition: opacity 0.25s;
+    }
+    .splash-nav a::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 50%; right: 50%;
+      height: 1px;
+      background: linear-gradient(90deg, #c084fc, #38bdf8);
+      transition: left 0.32s, right 0.32s;
+    }
+    .splash-nav a:hover { opacity: 1; }
+    .splash-nav a:hover::after { left: 0; right: 0; }
+
+    @keyframes fadeRise {
+      from { opacity: 0; transform: translateY(26px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ══════════════════════════════════════════
+       INNER APP SHELL
+    ══════════════════════════════════════════ */
+    #app {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      visibility: hidden; /* hidden until splash exits */
+    }
+    #app.ready { visibility: visible; }
+
+    /* ── HEADER ── */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 50;
+      background: var(--bg);
+      transition: background 0.5s;
+    }
+
+    .header-inner {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 1.2rem;
+      padding: 0.85rem 1.5rem 0;
+    }
+
+    /* Corner wordmark */
+    .wordmark {
+      font-family: 'Cinzel Decorative', serif;
+      font-weight: 700;
+      font-size: clamp(0.48rem, 0.95vw, 0.76rem);
+      letter-spacing: 0.04em;
+      line-height: 1.3;
+      text-transform: uppercase;
+      background:
+        radial-gradient(ellipse 80% 60% at 30% 40%, #c084fc 0%, transparent 55%),
+        radial-gradient(ellipse 60% 80% at 70% 60%, #38bdf8 0%, transparent 55%),
+        radial-gradient(ellipse 90% 90% at 50% 50%, #818cf8 0%, #0ea5e9 50%, #a78bfa 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    [data-theme="light"] .wordmark { filter: brightness(0.8) saturate(1.4); }
+
+    /* Top nav */
+    .top-nav {
+      display: flex;
+      justify-content: center;
+      gap: clamp(0.8rem, 2.2vw, 2rem);
+      flex-wrap: wrap;
+    }
+    .top-nav a {
+      font-size: clamp(0.64rem, 1.1vw, 0.8rem);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--text);
+      opacity: 0.6;
+      padding-bottom: 2px;
+      position: relative;
+      transition: opacity 0.25s, color 0.4s;
+    }
+    .top-nav a::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 50%; right: 50%;
+      height: 1px;
+      background: linear-gradient(90deg, #c084fc, #38bdf8);
+      transition: left 0.3s, right 0.3s;
+    }
+    .top-nav a:hover,
+    .top-nav a.active { opacity: 1; }
+    .top-nav a:hover::after,
+    .top-nav a.active::after { left: 0; right: 0; }
+
+    .header-rule {
+      margin-top: 0.85rem;
+      height: 1px;
+      background: var(--rule);
+      transition: background 0.5s;
+    }
+
+    /* ── PAGE AREA ── */
+    .page-content {
+      flex: 1;
+      padding: 6.8rem 2rem 5rem;
+      display: flex;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.36s ease;
+    }
+    .page-content.visible { opacity: 1; }
+
+    /* ── PAGES ── */
+    .page {
+      display: none;
+      width: 100%;
+      max-width: 700px;
+    }
+    .page.active { display: block; }
+
+    /* ══════════════════════════════════════════
+       HOME
+    ══════════════════════════════════════════ */
+    .home-body {
+      font-weight: 300;
+      font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+      line-height: 1.95;
+      color: var(--text);
+      transition: color 0.5s;
+    }
+    .home-body p { margin-bottom: 1.7em; }
+    .home-body p:last-child { margin-bottom: 0; }
+    .home-body a.inline-link {
+      font-weight: 600;
+      font-style: italic;
+      text-decoration: none;
+      background: linear-gradient(90deg, #c084fc, #38bdf8);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .home-body a.inline-link:hover { opacity: 0.65; }
+
+    /* ══════════════════════════════════════════
+       PLACEHOLDER PAGES
+    ══════════════════════════════════════════ */
+    .placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 44vh;
+      gap: 0.9rem;
+      text-align: center;
+    }
+    .placeholder-title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(1.3rem, 3vw, 2.1rem);
+      letter-spacing: 0.06em;
+      background:
+        radial-gradient(ellipse 80% 60% at 30% 40%, #c084fc 0%, transparent 55%),
+        radial-gradient(ellipse 60% 80% at 70% 60%, #38bdf8 0%, transparent 55%),
+        radial-gradient(ellipse 90% 90% at 50% 50%, #818cf8 0%, #0ea5e9 50%, #a78bfa 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    [data-theme="light"] .placeholder-title { filter: brightness(0.82) saturate(1.4); }
+    .placeholder-divider {
+      width: 80px; height: 1px;
+      background: linear-gradient(90deg, transparent, #a78bfa77, transparent);
+    }
+    .placeholder-sub {
+      font-style: italic;
+      font-weight: 300;
+      font-size: clamp(0.9rem, 1.8vw, 1.05rem);
+      color: var(--sub-text);
+      letter-spacing: 0.06em;
+      transition: color 0.5s;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ambient ambient-1"></div>
+  <div class="ambient ambient-2"></div>
+  <canvas id="starfield"></canvas>
+
+  <!-- ══ SPLASH ══ -->
+  <div id="splash">
+    <div class="toggle-wrap">
+      <span class="toggle-label">Dark</span>
+      <button class="toggle" id="splashToggle" aria-label="Toggle dark mode"></button>
+    </div>
+
+    <h1 class="splash-headline">Voice of the<br>Outer Worlds</h1>
+    <p class="splash-sub">Tune in to the voice of the outer worlds,<br>new issues each month</p>
+    <div class="splash-divider"></div>
+
+    <nav class="splash-nav">
+      <a href="#" data-page="home">Home</a>
+      <a href="#" data-page="releases">Releases</a>
+      <a href="#" data-page="news">News</a>
+      <a href="#" data-page="subscribe">Subscribe</a>
+      <a href="#" data-page="art">Art</a>
+      <a href="#" data-page="about">About</a>
+      <a href="#" data-page="contact">Contact</a>
+    </nav>
+  </div>
+
+  <!-- ══ INNER APP ══ -->
+  <div id="app">
+    <header>
+      <div class="header-inner">
+        <div class="wordmark" id="wordmark">Voice of the<br>Outer Worlds</div>
+
+        <nav class="top-nav" id="topNav">
+          <a href="#" data-page="home">Home</a>
+          <a href="#" data-page="releases">Releases</a>
+          <a href="#" data-page="news">News</a>
+          <a href="#" data-page="subscribe">Subscribe</a>
+          <a href="#" data-page="art">Art</a>
+          <a href="#" data-page="about">About</a>
+          <a href="#" data-page="contact">Contact</a>
+        </nav>
+
+        <div class="toggle-wrap">
+          <span class="toggle-label">Dark</span>
+          <button class="toggle" id="appToggle" aria-label="Toggle dark mode"></button>
+        </div>
+      </div>
+      <div class="header-rule"></div>
+    </header>
+
+    <div class="page-content" id="pageContent">
+
+      <!-- HOME -->
+      <div class="page active" id="page-home">
+        <div class="home-body">
+          <p>The Voice of the Outer Worlds is a curated collection of speculative fiction, poetry and art delivered in a variety of audio and visual formats to our readers on a monthly basis. A collaboration between a variety of artists and writers, VOTOW brings you to the bleeding edge of speculative explorations of our world and beyond in a bespoke, high quality package.</p>
+          <p>Previous issues and individual art prints can be purchased one month after their release.</p>
+          <p>Want to have your art or writing featured in an issue of VOTOW? All works can be submitted via our contact page <a href="#" data-page="contact" class="inline-link">HERE</a>.</p>
+        </div>
+      </div>
+
+      <!-- RELEASES -->
+      <div class="page" id="page-releases">
+        <div class="placeholder">
+          <div class="placeholder-title">Releases</div>
+          <div class="placeholder-divider"></div>
+          <p class="placeholder-sub">Coming soon — issues &amp; individual prints</p>
+        </div>
+      </div>
+
+      <!-- NEWS -->
+      <div class="page" id="page-news">
+        <div class="placeholder">
+          <div class="placeholder-title">News</div>
+          <div class="placeholder-divider"></div>
+          <p class="placeholder-sub">Updates, announcements &amp; dispatches</p>
+        </div>
+      </div>
+
+      <!-- SUBSCRIBE -->
+      <div class="page" id="page-subscribe">
+        <div class="placeholder">
+          <div class="placeholder-title">Subscribe</div>
+          <div class="placeholder-divider"></div>
+          <p class="placeholder-sub">Subscription details coming soon</p>
+        </div>
+      </div>
+
+      <!-- ART -->
+      <div class="page" id="page-art">
+        <div class="placeholder">
+          <div class="placeholder-title">Art</div>
+          <div class="placeholder-divider"></div>
+          <p class="placeholder-sub">Gallery of featured works &amp; prints</p>
+        </div>
+      </div>
+
+      <!-- ABOUT -->
+      <div class="page" id="page-about">
+        <div class="placeholder">
+          <div class="placeholder-title">About</div>
+          <div class="placeholder-divider"></div>
+          <p class="placeholder-sub">The story behind the outer worlds</p>
+        </div>
+      </div>
+
+      <!-- CONTACT -->
+      <div class="page" id="page-contact">
+        <div class="placeholder">
+          <div class="placeholder-title">Contact</div>
+          <div class="placeholder-divider"></div>
+          <p class="placeholder-sub">Submissions, enquiries &amp; correspondence</p>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /app -->
+
+  <script>
+    /* ══ THEME ══ */
+    const html = document.documentElement;
+
+    function setTheme(dark) {
+      html.dataset.theme = dark ? 'dark' : 'light';
+    }
+
+    document.getElementById('splashToggle').addEventListener('click', () =>
+      setTheme(html.dataset.theme !== 'dark'));
+    document.getElementById('appToggle').addEventListener('click', () =>
+      setTheme(html.dataset.theme !== 'dark'));
+
+    /* ══ NAVIGATION ══ */
+    const splash      = document.getElementById('splash');
+    const app         = document.getElementById('app');
+    const pageContent = document.getElementById('pageContent');
+    let   splashDone  = false;
+    let   currentPage = null;
+
+    function navigateTo(id, animate) {
+      if (id === currentPage) return;
+
+      const switchPage = () => {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.top-nav a').forEach(a => {
+          a.classList.toggle('active', a.dataset.page === id);
+        });
+        const target = document.getElementById('page-' + id);
+        if (target) target.classList.add('active');
+        currentPage = id;
+        window.scrollTo({ top: 0 });
+      };
+
+      if (animate && pageContent.classList.contains('visible')) {
+        pageContent.classList.remove('visible');
+        setTimeout(() => {
+          switchPage();
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => pageContent.classList.add('visible'))
+          );
+        }, 370);
+      } else {
+        switchPage();
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => pageContent.classList.add('visible'))
+        );
+      }
+    }
+
+    function enterApp(targetPage) {
+      if (splashDone) return;
+      splashDone = true;
+      splash.classList.add('fade-out');
+      setTimeout(() => {
+        splash.style.display = 'none';
+        app.classList.add('ready');
+        navigateTo(targetPage || 'home', false);
+      }, 560);
+    }
+
+    /* Splash nav */
+    splash.querySelectorAll('a[data-page]').forEach(a => {
+      a.addEventListener('click', e => { e.preventDefault(); enterApp(a.dataset.page); });
+    });
+
+    /* Inner nav */
+    function bindNav(root) {
+      root.querySelectorAll('a[data-page]').forEach(a => {
+        a.addEventListener('click', e => {
+          e.preventDefault();
+          if (!splashDone) { enterApp(a.dataset.page); return; }
+          navigateTo(a.dataset.page, true);
+        });
+      });
+    }
+    bindNav(document.getElementById('topNav'));
+    bindNav(document.getElementById('pageContent'));
+
+    /* Wordmark → home */
+    document.getElementById('wordmark').addEventListener('click', () => {
+      if (!splashDone) return;
+      navigateTo('home', true);
+    });
+
+    /* ══ STARFIELD ══ */
+    const canvas = document.getElementById('starfield');
+    const ctx    = canvas.getContext('2d');
+    let stars = [], W, H;
+
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+
+    function initStars() {
+      stars = Array.from({ length: 300 }, () => ({
+        x:   Math.random() * W,
+        y:   Math.random() * H,
+        r:   Math.random() * 1.4 + 0.2,
+        a:   Math.random(),
+        da:  (Math.random() - 0.5) * 0.004,
+        vx:  (Math.random() - 0.5) * 0.04,
+        vy:  (Math.random() - 0.5) * 0.04,
+        hue: Math.random() < 0.3 ? `${200 + Math.random() * 80}` : '255',
+      }));
+    }
+
+    function tick() {
+      ctx.clearRect(0, 0, W, H);
+      if (html.dataset.theme === 'dark') {
+        stars.forEach(s => {
+          s.x = (s.x + s.vx + W) % W;
+          s.y = (s.y + s.vy + H) % H;
+          s.a = Math.max(0, Math.min(1, s.a + s.da));
+          if (s.a <= 0 || s.a >= 1) s.da *= -1;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fillStyle = `hsla(${s.hue}, 80%, 92%, ${s.a})`;
+          ctx.fill();
+        });
+      }
+      requestAnimationFrame(tick);
+    }
+
+    resize(); initStars(); tick();
+    window.addEventListener('resize', () => { resize(); initStars(); });
+  </script>
+</body>
+</html>
